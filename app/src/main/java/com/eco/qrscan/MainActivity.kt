@@ -24,6 +24,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.eco.qrscan.ui.theme.QrscanTheme
 import android.view.View;
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +35,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Button
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
@@ -41,17 +48,39 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorLong
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionStatus
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 
+var IsCamera = mutableStateOf(false)
 
 class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalPermissionsApi::class)
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            QrscanTheme {
-                A()
+            val launcher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission(),
+                onResult = {
+                    if (it) {
+                        IsCamera.value = true
+                    }
+                }
+            )
 
+            val p = rememberPermissionState(android.Manifest.permission.CAMERA)
+            if (p.status == PermissionStatus.Granted) {
+                IsCamera.value = true
+            }
+
+            if (IsCamera.value) {
+                QrMain()
+            } else {
+                LaunchedEffect(Unit) {
+                    launcher.launch(android.Manifest.permission.CAMERA)
+                }
             }
         }
 
@@ -63,92 +92,5 @@ class MainActivity : ComponentActivity() {
         }
 
 
-    }
-}
-
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun A() {
-    Scaffold(
-        topBar = {
-            TopAppBar(title = {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = "         QR Scan"
-                    , fontSize = 35.sp,
-                        fontFamily = FontFamily.Cursive,
-                        fontWeight = FontWeight(900),
-                    )
-                }
-            }, navigationIcon = {
-                FloatingActionButton(onClick = { /*TODO*/ }, content = {
-                    Image(
-                        painter = painterResource(id = R.drawable.icons8_flashlight_64),
-                        contentDescription = "Flashlight",
-                        modifier = Modifier.width(
-                            50.dp
-                        ).height(50.dp)
-                    )
-                })
-            }, actions = {
-                FloatingActionButton(onClick = { /*TODO*/ }, content = { Text("B") })
-            })
-        },
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-
-                Box(
-                    modifier =
-                    Modifier
-                        .width(200.dp)
-                        .height(200.dp)
-                        .background(
-                            Color(0xFF524F4F)
-                        )
-                        .shadow(
-                            elevation = 10.dp,
-                            shape = MaterialTheme.shapes.medium
-                        )
-                        .padding(
-                            10.dp
-                        )
-                ) {
-
-                        Image(
-                            painter = painterResource(id = R.drawable.qr_scan),
-                            contentDescription = "  QR Scanner",
-                            modifier = Modifier.width(
-                                300.dp
-                            ).height(
-                                300.dp
-                            )
-                        )
-                }
-            }
-        }
-    }
-}
-
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!", modifier = modifier
-    )
-}
-
-@Composable
-fun GreetingPreview() {
-    QrscanTheme {
-        Greeting("Android")
     }
 }

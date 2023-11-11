@@ -69,4 +69,14 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation("com.journeyapps:zxing-android-embedded:4.2.0")
     implementation("com.google.zxing:core:3.4.1")
+
+    implementation("androidx.camera:camera-camera2:1.3.0-alpha04")
+    implementation("androidx.camera:camera-lifecycle:1.3.0-alpha04")
+    implementation("androidx.camera:camera-view:1.3.0-alpha04")
+    implementation("com.google.mlkit:barcode-scanning:17.0.3")
+
+    implementation("io.coil-kt:coil-compose:2.1.0")
+    implementation("io.coil-kt:coil-gif:2.1.0")
+
+    implementation("com.google.accompanist:accompanist-permissions:0.25.0")
 }
