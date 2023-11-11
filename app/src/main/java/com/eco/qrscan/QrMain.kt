@@ -1,7 +1,5 @@
 package com.eco.qrscan
 
-import android.content.Context
-import android.hardware.camera2.CameraManager
 import android.os.Build.VERSION.SDK_INT
 import android.util.Log
 import android.widget.Toast
@@ -15,7 +13,6 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,7 +23,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -44,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import coil.ImageLoader
 import coil.compose.rememberAsyncImagePainter
@@ -65,7 +65,9 @@ fun QrMain() {
         topBar = {
             topAppBar()
         },
-        bottomBar = {},
+        bottomBar = {
+            bottomAppBar()
+        },
     ) { pad ->
         Box(
             modifier = Modifier
@@ -73,11 +75,30 @@ fun QrMain() {
                     top = pad.calculateTopPadding(),
                     bottom = pad.calculateBottomPadding(),
                 )
+                .background(
+                    if (IsSuccessQr.value) {
+                        Color(0xFFA0D468)
+                    } else if (IsWarningQr.value) {
+                        Color(0xFFDBD168)
+                    } else if (IsErrorQr.value) {
+                        Color(0xFFD46868)
+                    } else {
+                        Color(0xFFF0EFE5)
+                    }
+                )
         ) {
-            Column {
+            Column (
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(0.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ){
                 qrAppMetadata()
                 qrScannerCameraHole()
                 scanResult()
+                Spacer(modifier = Modifier.height(20.dp))
             }
         }
     }
@@ -125,6 +146,47 @@ fun topAppBar() {
 }
 
 @Composable
+fun bottomAppBar() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier
+            .padding(0.dp)
+            .height(40.dp)
+            .shadow(4.dp)
+            .background(color = Color.White)
+            .fillMaxWidth()
+            .clip(
+                shape = RoundedCornerShape(20.dp)
+            )
+    ) {
+        Spacer(modifier = Modifier.width(10.dp))
+        Box (
+            modifier = Modifier.background(color = Color(0xFFFAF8F8))
+                .clip(
+                    shape = RoundedCornerShape(20.dp)
+                ).width(150.dp),
+            contentAlignment = Alignment.Center
+        ){
+            Text(
+                text = "- 0 / 200 -",
+                fontSize = 15.sp,
+                fontFamily = FontFamily.SansSerif,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(
+                    bottom = 4.dp,
+                ),
+                color = Color.Black,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+    }
+}
+
+
+
+@Composable
 fun qrAppMetadata() {
     Row(
         modifier = Modifier
@@ -138,20 +200,20 @@ fun qrAppMetadata() {
             painter = painterResource(id = R.drawable.qr_scan),
             contentDescription = null,
             modifier = Modifier
-                .width(120.dp)
-                .height(120.dp)
+                .width(100.dp)
+                .height(100.dp)
         )
     }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(12.dp),
+            .padding(3.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = "Super 30 TIcket Scanner",
-            fontSize = 25.sp,
+            fontSize = 23.sp,
             fontFamily = FontFamily.Default,
             fontWeight = FontWeight(900),
         )
@@ -169,76 +231,103 @@ fun qrScannerCameraHole() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier
-                .width(250.dp)
-                .height(323.dp)
-                .padding(
-                    19.dp
-                )
-                .border(
-                    width = 3.dp,
-                    color = if (IsSuccessQr.value) {
-                        Color.Green
-                    } else if (IsWarningQr.value) {
-                        Color.Yellow
-                    } else if (IsErrorQr.value) {
-                        Color.Red
-                    } else {
-                        Color.Black
-                    },
-                    shape = RoundedCornerShape(4.dp)
-                )
-
+            modifier = Modifier, contentAlignment = Alignment.Center
         ) {
-            AndroidView(
-                { context ->
-                    val cameraExecutor = Executors.newSingleThreadExecutor()
-                    val previewView = PreviewView(context).also {
-                        it.scaleType = PreviewView.ScaleType.FILL_CENTER
-                    }
-                    val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-                    cameraProviderFuture.addListener({
-                        val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-
-                        val preview = Preview.Builder()
-                            .build()
-                            .also {
-                                it.setSurfaceProvider(previewView.surfaceProvider)
-                            }
-
-                        val imageCapture = ImageCapture.Builder().build()
-
-                        val imageAnalyzer = ImageAnalysis.Builder()
-                            .build()
-                            .also {
-                                it.setAnalyzer(cameraExecutor, BarcodeAnalyser {
-                                    Toast.makeText(context, "Barcode found", Toast.LENGTH_SHORT)
-                                        .show()
-                                    IsSuccessQr.value = true
-                                })
-                            }
-
-                        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
-                        try {
-                            cameraProvider.unbindAll()
-                            cameraProvider.bindToLifecycle(
-                                context as ComponentActivity,
-                                cameraSelector,
-                                preview,
-                                imageCapture,
-                                imageAnalyzer
-                            )
-
-                        } catch (exc: Exception) {
-                            Log.e("DEBUG", "Use case binding failed", exc)
-                        }
-                    }, ContextCompat.getMainExecutor(context))
-                    previewView
-                },
+            Row(
                 modifier = Modifier
-                    .size(width = 300.dp, height = 300.dp)
-            )
+                    .zIndex(6f)
+                    .padding(
+                        top = 230.dp,
+                        bottom = 0.dp
+                    )
+                    .width(
+                        40.dp
+                    )
+                    .height(
+                        40.dp
+                    ),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                GifScan()
+            }
+            Box(
+                modifier = Modifier
+                    .width(250.dp)
+                    .height(323.dp)
+                    .padding(
+                        15.dp
+                    )
+                    .border(
+                        width = 3.dp,
+                        color = if (IsSuccessQr.value) {
+                            Color.Green
+                        } else if (IsWarningQr.value) {
+                            Color.Yellow
+                        } else if (IsErrorQr.value) {
+                            Color.Red
+                        } else {
+                            Color.Black
+                        },
+                        shape = RoundedCornerShape(2.dp)
+                    )
+
+            ) {
+
+                AndroidView(
+                    { context ->
+                        val cameraExecutor = Executors.newSingleThreadExecutor()
+                        val previewView = PreviewView(context).also {
+                            it.scaleType = PreviewView.ScaleType.FILL_CENTER
+                        }
+                        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+                        cameraProviderFuture.addListener({
+                            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+
+                            val preview = Preview.Builder()
+                                .build()
+                                .also {
+                                    it.setSurfaceProvider(previewView.surfaceProvider)
+                                }
+
+                            val imageCapture = ImageCapture.Builder().build()
+
+                            val imageAnalyzer = ImageAnalysis.Builder()
+                                .build()
+                                .also { it ->
+                                    it.setAnalyzer(cameraExecutor, BarcodeAnalyser {
+                                        Toast.makeText(context, it, Toast.LENGTH_SHORT)
+                                            .show()
+                                        IsSuccessQr.value = true
+                                        Thread {
+                                            Thread.sleep(5000)
+                                            IsSuccessQr.value = false
+                                        }.start()
+                                    })
+                                }
+
+                            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+                            try {
+                                cameraProvider.unbindAll()
+                                cameraProvider.bindToLifecycle(
+                                    context as ComponentActivity,
+                                    cameraSelector,
+                                    preview,
+                                    imageCapture,
+                                    imageAnalyzer
+                                )
+
+                            } catch (exc: Exception) {
+                                Log.e("DEBUG", "Use case binding failed", exc)
+                            }
+                        }, ContextCompat.getMainExecutor(context))
+                        previewView
+                    },
+                    modifier = Modifier
+                        .size(width = 300.dp, height = 300.dp)
+                )
+            }
         }
     }
 }
@@ -383,3 +472,22 @@ fun GifQr() {
             .height(40.dp),
     )
 }
+
+@Composable
+fun GifScan() {
+    val context = LocalContext.current
+    val imageLoader = GifImage()
+    Image(
+        painter = rememberAsyncImagePainter(
+            ImageRequest.Builder(context).data(data = R.drawable.output_onlinegiftools).apply(block = {
+                size(Size.ORIGINAL)
+            }).build(), imageLoader = imageLoader
+        ),
+        contentDescription = null,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(500.dp),
+        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.White)
+    )
+}
+
