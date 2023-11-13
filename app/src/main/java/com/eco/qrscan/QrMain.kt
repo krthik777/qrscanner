@@ -2,6 +2,7 @@ package com.eco.qrscan
 
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
@@ -27,9 +28,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,6 +65,13 @@ import com.eco.qrscan.ui.theme.grotesk
 import com.eco.qrscan.ui.theme.nunito
 import java.util.concurrent.Executors
 
+var gcam: Camera? = null
+val flash = mutableStateOf(false)
+val scannerOpen = mutableStateOf(false)
+val darkMode = mutableStateOf(false)
+
+// TODO: Add a button to switch between dark and light mode, and change the background color of the app accordingly.
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QrMain() {
@@ -68,13 +80,12 @@ fun QrMain() {
             TopAppBar()
         },
         bottomBar = {
-            bottomAppBar()
+            //bottomAppBar()
         },
     ) { pad ->
-        Box (
-            modifier = Modifier
-                .background(color = Color(0xFF7084E9))
-        ){
+        Box(
+            modifier = Modifier.background(color = Color(0xFFD6DFB8))
+        ) {
             Box(
                 modifier = Modifier
                     .padding(
@@ -87,32 +98,38 @@ fun QrMain() {
                         if (IsSuccessQr.value) {
                             Color(0xFFA9DA75)
                         } else if (IsWarningQr.value) {
-                            Color(0xFFD8CF55)
+                            Color(0xFFDAD173)
                         } else if (IsErrorQr.value) {
-                            Color(0xFFB30E0E)
+                            Color(0xFFF3B0B0)
+                        } else if (darkMode.value) {
+                            Color(0xFF2E1B58)
                         } else {
-                            Color(0xFFE0F8FC)
+                            Color(0xFFE0E1E6)
                         }
                     )
                     .fillMaxSize()
             ) {
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(0.dp)
+                        .fillMaxSize()
+                        .padding(10.dp)
+                        .verticalScroll(rememberScrollState())
+                        .background(color = Color.White)
                         .clip(
-                            shape = RoundedCornerShape(120.dp)
+                            shape = RoundedCornerShape(20.dp)
                         )
-                       .verticalScroll(rememberScrollState()),
-
+                        .shadow(
+                            shape = RoundedCornerShape(20.dp), elevation = 0.dp
+                        ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    QrScannerCameraHole()
-
-                    UserMetaDisplay()
-
+                    qrScannerOpenButton()
+                    if (scannerOpen.value) {
+                        QrScannerCameraHole()
+                    }
                     ScanResult()
+                    UserMetaDisplay()
                     QrAppMetadata()
                 }
             }
@@ -121,50 +138,162 @@ fun QrMain() {
 }
 
 @Composable
-fun TopAppBar() {
-    Box (
-        modifier = Modifier
-            .background(color = Color(0xDD5677D5))
-            .clip(
-                shape = RoundedCornerShape(120.dp)
+fun qrScannerOpenButton() {
+    if (!scannerOpen.value) {
+        Box(
+            modifier = Modifier.padding(
+                start = 10.dp,
+                end = 10.dp,
             )
-    ){
+                .padding(
+                    top = 10.dp,
+                    bottom = 10.dp
+                )
+        ) {
+            IconButton(
+                onClick = {
+                    scannerOpen.value = true
+                },
+                modifier = Modifier
+                    .width(130.dp)
+                    .height(130.dp)
+                    .clip(
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                    .padding(
+                        horizontal = 0.dp, vertical = 0.dp
+                    )
+                    .border(
+                        width = 3.dp, color =
+                        if (!darkMode.value) {
+                            Color(0xFFFCBF49)
+                        } else {
+                            Color(0xFF351B6F)
+                        }, shape = RoundedCornerShape(20.dp)
+                    )
+                    .background(
+                        color = Color.Transparent,
+                    ),
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.qr_scan),
+                    contentDescription = "QR Scanner",
+                    modifier = Modifier
+                        .width(110.dp)
+                        .height(110.dp)
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun flashButton() {
+    Box(
+        modifier = Modifier.padding(
+            start = 10.dp,
+            end = 10.dp,
+        )
+    ) {
+        FloatingActionButton(
+            onClick = {
+                if (gcam != null && gcam?.cameraInfo?.hasFlashUnit() == true) {
+                    flash.value = !flash.value
+                    gcam?.cameraControl?.enableTorch(flash.value)
+                }
+            },
+            modifier = Modifier
+                .width(60.dp)
+                .height(60.dp)
+                .clip(
+                    shape = RoundedCornerShape(200.dp)
+                )
+                .shadow(
+                    elevation = 5.dp, shape = RoundedCornerShape(20.dp)
+                )
+                .padding(
+                    horizontal = 0.dp, vertical = 0.dp
+                )
+                .border(
+                    width = 3.dp, color =
+                    if (flash.value) {
+                        Color(0xFF351B6F)
+                    } else {
+                        Color(0xFFE0A126)
+                    }, shape = RoundedCornerShape(2.dp)
+                )
+                .background(
+                    color = if (flash.value) {
+                        Color(0xFF172369)
+                    } else {
+                        Color(0xFFFCBF49)
+                    }
+                ),
+            containerColor = if (flash.value) {
+                Color(0xFFACB7FA)
+            } else {
+                Color(0xFFD8C9AB)
+            },
+            elevation = FloatingActionButtonDefaults.elevation(20.dp, 2.dp),
+            shape = RoundedCornerShape(20.dp)
+        ) {
+            Text("F")
+        }
+    }
+}
+
+@Composable
+fun TopAppBar() {
+    Box(
+        modifier = Modifier.background(color = Color(0xFFD6DFB8))
+    ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .padding(8.dp)
+                .padding(
+                    horizontal = 2.dp
+                )
                 .height(65.dp)
-                .shadow(4.dp)
-                .background(color = Color(0xFF7085EA))
+                .shadow(
+                    elevation = 5.dp, shape = RoundedCornerShape(10.dp)
+                )
+                .background(color = if (!darkMode.value) {Color(0xFFDCEBD0)
+                } else {
+                    Color(0xFF34313C)
+                })
                 .fillMaxWidth()
                 .clip(
                     shape = RoundedCornerShape(20.dp)
                 )
         ) {
             Spacer(modifier = Modifier.width(16.dp))
-        //    Image(
-         //       painter = painterResource(id = R.drawable.icons8_left_arrow_96),
-          //      contentDescription = "Back",
-          //      modifier = Modifier
-           //         .width(60.dp)
-           //        .height(60.dp)
-         //   )
+            Image(
+                painter = painterResource(id = R.drawable.qr_scan),
+                contentDescription = "Back",
+                modifier = Modifier
+                    .width(30.dp)
+                    .height(30.dp),
+                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFF9D77A3))
+            )
             Text(
-                text = "TICKET SCANNER",
+                text = "QR Scanner",
                 fontSize = 23.sp,
                 fontFamily = nunito,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(16.dp),
-                color = Color(0xFFFAF8F8)
+                color = Color(0xFF2E1B58)
             )
-          //  Image(
-          //      painter = painterResource(id = R.drawable.icons8_right_arrow_96),
-           //     contentDescription = "More",
-           //     modifier = Modifier
-            //        .width(60.dp)
-             //       .height(60.dp)
-          //  )
+            Image(
+                painter = painterResource(id = R.drawable.qr_scan),
+                contentDescription = "More",
+                modifier = Modifier
+                    .width(30.dp)
+                    .height(30.dp),
+                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFF9D77A3))
+            )
             Spacer(modifier = Modifier.width(16.dp))
         }
     }
@@ -175,32 +304,20 @@ fun QrAppMetadata() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 50.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "Super 30",
-            fontSize = 39.sp,
-            fontFamily = FontFamily.Cursive,
-            fontWeight = FontWeight(900),
-        )
-    }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
             .padding(8.dp)
             .padding(top = 10.dp),
-        horizontalArrangement = Arrangement.Center,
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        flashButton()
         Image(
             painter = painterResource(id = R.drawable.super_30_poster),
             contentDescription = null,
             modifier = Modifier
-                .width(280.dp)
+                .width(180.dp)
                 .height(180.dp)
         )
+        flashButton()
     }
     Row(
         modifier = Modifier
@@ -212,7 +329,8 @@ fun QrAppMetadata() {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = "Ticket Scanned [ ${ticketStat.value.first} / ${ticketStat.value.second} ]",
+        Text(
+            text = "[ ${ticketStat.value.first} / ${ticketStat.value.second} ]",
             fontSize = 20.sp,
             fontFamily = nunito,
             fontWeight = FontWeight.Bold,
@@ -223,7 +341,20 @@ fun QrAppMetadata() {
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
     }
-
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(3.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Super 30 Ticket Scanner",
+            fontSize = 23.sp,
+            fontFamily = nunito,
+            fontWeight = FontWeight(800),
+        )
+    }
 }
 
 @Composable
@@ -243,19 +374,18 @@ fun QrScannerCameraHole() {
                 modifier = Modifier
                     .zIndex(6f)
                     .padding(
-                        top = 230.dp,
-                        bottom = 0.dp
+                        top = 230.dp, bottom = 0.dp
                     )
                     .width(
-                        80.dp
+                        40.dp
                     )
                     .height(
-                        48.dp
+                        40.dp
                     ),
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-               GifScan()
+                GifScan()
             }
             Box(
                 modifier = Modifier
@@ -265,8 +395,7 @@ fun QrScannerCameraHole() {
                         15.dp
                     )
                     .border(
-                        width = 3.dp,
-                        color = if (IsSuccessQr.value) {
+                        width = 3.dp, color = if (IsSuccessQr.value) {
                             Color.Green
                         } else if (IsWarningQr.value) {
                             Color.Yellow
@@ -274,11 +403,11 @@ fun QrScannerCameraHole() {
                             Color.Red
                         } else {
                             Color.Black
-                        },
-                        shape = RoundedCornerShape(2.dp)
+                        }, shape = RoundedCornerShape(2.dp)
                     )
 
             ) {
+
 
                 AndroidView(
                     { context ->
@@ -289,27 +418,21 @@ fun QrScannerCameraHole() {
                         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
                         cameraProviderFuture.addListener({
                             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-
-                            val preview = Preview.Builder()
-                                .build()
-                                .also {
+                            val preview = Preview.Builder().build().also {
                                     it.setSurfaceProvider(previewView.surfaceProvider)
                                 }
 
                             val imageCapture = ImageCapture.Builder().build()
 
-                            val imageAnalyzer = ImageAnalysis.Builder()
-                                .build()
-                                .also { it ->
+                            val imageAnalyzer = ImageAnalysis.Builder().build().also { it ->
                                     it.setAnalyzer(cameraExecutor, BarcodeAnalyser {
                                         DoScanResult(it)
                                     })
                                 }
                             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
                             try {
                                 cameraProvider.unbindAll()
-                                cameraProvider.bindToLifecycle(
+                                val c = cameraProvider.bindToLifecycle(
                                     context as ComponentActivity,
                                     cameraSelector,
                                     preview,
@@ -317,14 +440,14 @@ fun QrScannerCameraHole() {
                                     imageAnalyzer
                                 )
 
+                                gcam = c
+
                             } catch (exc: Exception) {
                                 Log.e("DEBUG", "Use case binding failed", exc)
                             }
                         }, ContextCompat.getMainExecutor(context))
                         previewView
-                    },
-                    modifier = Modifier
-                        .size(width = 300.dp, height = 300.dp)
+                    }, modifier = Modifier.size(width = 300.dp, height = 300.dp)
                 )
             }
         }
@@ -375,7 +498,7 @@ fun ScanResult() {
                     modifier = Modifier.padding(3.dp)
                 )
             } else {
-               // GifQr()
+                GifQr()
                 Text(
                     text = "Scan QR Code",
                     fontSize = 25.sp,
@@ -391,11 +514,9 @@ fun ScanResult() {
 @Composable
 fun gifImage(): ImageLoader {
     val context = LocalContext.current
-    val imageLoader = ImageLoader.Builder(context)
-        .components {
+    val imageLoader = ImageLoader.Builder(context).components {
             add(ImageDecoderDecoder.Factory())
-        }
-        .build()
+        }.build()
 
     return imageLoader
 }
@@ -451,7 +572,7 @@ fun GifError() {
     )
 }
 
-/*@Composable
+@Composable
 fun GifQr() {
     val context = LocalContext.current
     val imageLoader = gifImage()
@@ -466,7 +587,7 @@ fun GifQr() {
             .fillMaxWidth()
             .height(40.dp),
     )
-}*/
+}
 
 @Composable
 fun GifScan() {
@@ -481,8 +602,8 @@ fun GifScan() {
         ),
         contentDescription = null,
         modifier = Modifier
-            .width(150.dp)
-            .height(800.dp),
+            .fillMaxWidth()
+            .height(500.dp),
         colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.White)
     )
 }
@@ -512,47 +633,8 @@ fun UserMetaDisplay() {
                 modifier = Modifier.padding(1.dp)
             )
             Divider(
-                thickness = 3.dp,
-                color = Color.Black
+                thickness = 3.dp, color = Color.Black
             )
-        }
-    }
-}
-
-@Composable
-fun bottomAppBar(){
-    Box (
-        modifier = Modifier
-            .background(color = Color(0xDD5677D5))
-            .clip(
-                shape = RoundedCornerShape(150.dp)
-            )
-    ){
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .padding(0.dp)
-                .height(25.dp)
-                .shadow(4.dp)
-                .background(color = Color(0xFF7085EA))
-                .fillMaxWidth()
-                .clip(
-                    shape = RoundedCornerShape(20.dp)
-                )
-        ) {
-            Spacer(modifier = Modifier.width(0.dp))
-
-            Text(
-                text = "© Powered by RoseLoverX",
-                fontSize = 15.sp,
-                fontFamily = FontFamily.Default,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(0.dp),
-                color = Color(0xFFFAF8F8)
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
         }
     }
 }
