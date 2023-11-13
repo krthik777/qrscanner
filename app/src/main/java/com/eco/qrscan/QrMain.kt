@@ -68,12 +68,12 @@ fun QrMain() {
             TopAppBar()
         },
         bottomBar = {
-            //bottomAppBar()
+            bottomAppBar()
         },
     ) { pad ->
         Box (
             modifier = Modifier
-                .background(color = Color(0xFF003049))
+                .background(color = Color(0xFF7084E9))
         ){
             Box(
                 modifier = Modifier
@@ -87,11 +87,11 @@ fun QrMain() {
                         if (IsSuccessQr.value) {
                             Color(0xFFA9DA75)
                         } else if (IsWarningQr.value) {
-                            Color(0xFFDAD173)
+                            Color(0xFFD8CF55)
                         } else if (IsErrorQr.value) {
-                            Color(0xFFF3B0B0)
+                            Color(0xFFB30E0E)
                         } else {
-                            Color(0xFFEAE2B7)
+                            Color(0xFFE0F8FC)
                         }
                     )
                     .fillMaxSize()
@@ -100,14 +100,20 @@ fun QrMain() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(0.dp)
-                        .verticalScroll(rememberScrollState()),
+                        .clip(
+                            shape = RoundedCornerShape(120.dp)
+                        )
+                       .verticalScroll(rememberScrollState()),
+
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    QrAppMetadata()
                     QrScannerCameraHole()
-                    ScanResult()
+
                     UserMetaDisplay()
+
+                    ScanResult()
+                    QrAppMetadata()
                 }
             }
         }
@@ -118,7 +124,10 @@ fun QrMain() {
 fun TopAppBar() {
     Box (
         modifier = Modifier
-            .background(color = Color(0xFF003049))
+            .background(color = Color(0xDD5677D5))
+            .clip(
+                shape = RoundedCornerShape(120.dp)
+            )
     ){
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -127,35 +136,35 @@ fun TopAppBar() {
                 .padding(8.dp)
                 .height(65.dp)
                 .shadow(4.dp)
-                .background(color = Color(0xFFFCBF49))
+                .background(color = Color(0xFF7085EA))
                 .fillMaxWidth()
                 .clip(
                     shape = RoundedCornerShape(20.dp)
                 )
         ) {
             Spacer(modifier = Modifier.width(16.dp))
-            Image(
-                painter = painterResource(id = R.drawable.icons8_left_arrow_96),
-                contentDescription = "Back",
-                modifier = Modifier
-                    .width(60.dp)
-                    .height(60.dp)
-            )
+        //    Image(
+         //       painter = painterResource(id = R.drawable.icons8_left_arrow_96),
+          //      contentDescription = "Back",
+          //      modifier = Modifier
+           //         .width(60.dp)
+           //        .height(60.dp)
+         //   )
             Text(
-                text = "QR Scan",
+                text = "TICKET SCANNER",
                 fontSize = 23.sp,
                 fontFamily = nunito,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(16.dp),
-                color = Color(0xFFD62828)
+                color = Color(0xFFFAF8F8)
             )
-            Image(
-                painter = painterResource(id = R.drawable.icons8_right_arrow_96),
-                contentDescription = "More",
-                modifier = Modifier
-                    .width(60.dp)
-                    .height(60.dp)
-            )
+          //  Image(
+          //      painter = painterResource(id = R.drawable.icons8_right_arrow_96),
+           //     contentDescription = "More",
+           //     modifier = Modifier
+            //        .width(60.dp)
+             //       .height(60.dp)
+          //  )
             Spacer(modifier = Modifier.width(16.dp))
         }
     }
@@ -163,6 +172,20 @@ fun TopAppBar() {
 
 @Composable
 fun QrAppMetadata() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 50.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Super 30",
+            fontSize = 39.sp,
+            fontFamily = FontFamily.Cursive,
+            fontWeight = FontWeight(900),
+        )
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -175,7 +198,7 @@ fun QrAppMetadata() {
             painter = painterResource(id = R.drawable.super_30_poster),
             contentDescription = null,
             modifier = Modifier
-                .width(180.dp)
+                .width(280.dp)
                 .height(180.dp)
         )
     }
@@ -189,8 +212,7 @@ fun QrAppMetadata() {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = "[ ${ticketStat.value.first} / ${ticketStat.value.second} ]",
+        Text(text = "Ticket Scanned [ ${ticketStat.value.first} / ${ticketStat.value.second} ]",
             fontSize = 20.sp,
             fontFamily = nunito,
             fontWeight = FontWeight.Bold,
@@ -201,20 +223,7 @@ fun QrAppMetadata() {
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
     }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(3.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "Super 30 Ticket Scanner",
-            fontSize = 23.sp,
-            fontFamily = nunito,
-            fontWeight = FontWeight(800),
-        )
-    }
+
 }
 
 @Composable
@@ -238,15 +247,15 @@ fun QrScannerCameraHole() {
                         bottom = 0.dp
                     )
                     .width(
-                        40.dp
+                        80.dp
                     )
                     .height(
-                        40.dp
+                        48.dp
                     ),
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                GifScan()
+               GifScan()
             }
             Box(
                 modifier = Modifier
@@ -366,7 +375,7 @@ fun ScanResult() {
                     modifier = Modifier.padding(3.dp)
                 )
             } else {
-                GifQr()
+               // GifQr()
                 Text(
                     text = "Scan QR Code",
                     fontSize = 25.sp,
@@ -442,7 +451,7 @@ fun GifError() {
     )
 }
 
-@Composable
+/*@Composable
 fun GifQr() {
     val context = LocalContext.current
     val imageLoader = gifImage()
@@ -457,7 +466,7 @@ fun GifQr() {
             .fillMaxWidth()
             .height(40.dp),
     )
-}
+}*/
 
 @Composable
 fun GifScan() {
@@ -472,8 +481,8 @@ fun GifScan() {
         ),
         contentDescription = null,
         modifier = Modifier
-            .fillMaxWidth()
-            .height(500.dp),
+            .width(150.dp)
+            .height(800.dp),
         colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.White)
     )
 }
@@ -506,6 +515,44 @@ fun UserMetaDisplay() {
                 thickness = 3.dp,
                 color = Color.Black
             )
+        }
+    }
+}
+
+@Composable
+fun bottomAppBar(){
+    Box (
+        modifier = Modifier
+            .background(color = Color(0xDD5677D5))
+            .clip(
+                shape = RoundedCornerShape(150.dp)
+            )
+    ){
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .padding(0.dp)
+                .height(25.dp)
+                .shadow(4.dp)
+                .background(color = Color(0xFF7085EA))
+                .fillMaxWidth()
+                .clip(
+                    shape = RoundedCornerShape(20.dp)
+                )
+        ) {
+            Spacer(modifier = Modifier.width(0.dp))
+
+            Text(
+                text = "© Powered by RoseLoverX",
+                fontSize = 15.sp,
+                fontFamily = FontFamily.Default,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(0.dp),
+                color = Color(0xFFFAF8F8)
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
         }
     }
 }
